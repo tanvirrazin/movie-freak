@@ -1,11 +1,7 @@
 import requests
-import os
-import json
-import pprint
-import operator
 import sys
 
-pp = pprint.PrettyPrinter(indent=4)
+
 watched_movies_data = []
 actors = {}
 directors = {}
@@ -72,7 +68,7 @@ def scrap_movie_data():
             sys.stdout.write('.')
             movie_count += 1
         print('{} movie-data were scraped'.format(movie_count))
-        
+
 
 if __name__ == '__main__':
     # Scraping all movie data
