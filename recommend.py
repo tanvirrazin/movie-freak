@@ -61,6 +61,27 @@ def build_directors_list():
                     directors[movie_director] = [movie_data['Title']]
 
 
+def recommend_unwatched_movie():
+    top_ten_actors = [actor[0] for actor in sorted_actors_by_movie_number[0:10]]
+    top_ten_directors = [director[0] for director in sorted_directors_by_movie_number[0:10]]
+
+    recommended_movie_by_actors = []
+    for movie_id, movie_data in unwatched_movies_data.items():
+        if len(set(movie_data['Actors']).intersection(set(top_ten_actors))) > 0:
+            recommended_movie_by_actors.append(movie_data)
+
+    print(recommended_movie_by_actors)
+    print(len(recommended_movie_by_actors))
+
+    recommended_movie_by_actors_and_directors = []
+    for movie_data in recommended_movie_by_actors:
+        if len(set(movie_data['Directors']).intersection(set(top_ten_directors))) > 0:
+            recommended_movie_by_actors_and_directors.append(movie_data)
+
+    print('')
+    print('')
+    print(recommended_movie_by_actors_and_directors)
+
 def scrape_movie(movie_id):
     response = requests.get('http://www.omdbapi.com/?i={}&plot=short&r=json'.format(movie_id))
 
@@ -105,6 +126,7 @@ def scrap_movie_data():
 
 if __name__ == '__main__':
     # Scraping all movie data
+    print('')
     scrap_movie_data()
 
     # Building all needed data structures
@@ -116,3 +138,5 @@ if __name__ == '__main__':
     sorted_actors_by_movie_number = sort_and_print_actors()
     sorted_directors_by_movie_number = sort_and_print_directors()
     print('')
+
+    recommend_unwatched_movie()
