@@ -65,22 +65,24 @@ def recommend_unwatched_movie():
     top_ten_actors = [actor[0] for actor in sorted_actors_by_movie_number[0:10]]
     top_ten_directors = [director[0] for director in sorted_directors_by_movie_number[0:10]]
 
-    recommended_movie_by_actors = []
+    recommended_movie_ids_by_actors = []
+    recommended_movie_ids_by_directors = []
+
     for movie_id, movie_data in unwatched_movies_data.items():
+
         if len(set(movie_data['Actors']).intersection(set(top_ten_actors))) > 0:
-            recommended_movie_by_actors.append(movie_data)
+            recommended_movie_ids_by_actors.append(movie_data['imdbID'])
 
-    print(recommended_movie_by_actors)
-    print(len(recommended_movie_by_actors))
-
-    recommended_movie_by_actors_and_directors = []
-    for movie_data in recommended_movie_by_actors:
         if len(set(movie_data['Directors']).intersection(set(top_ten_directors))) > 0:
-            recommended_movie_by_actors_and_directors.append(movie_data)
+            recommended_movie_ids_by_directors.append(movie_data['imdbID'])
+
+    total_recommended_movie_ids = list(set(recommended_movie_ids_by_actors).union(set(recommended_movie_ids_by_directors)))
 
     print('')
-    print('')
-    print(recommended_movie_by_actors_and_directors)
+    print('Top 10 recommended movies:')
+    print('--------------------------')
+    for ind, movie_id in enumerate(total_recommended_movie_ids[0:10]):
+        print('{}) {}\nDirector: {}\nActors: {}\n'.format(ind+1, unwatched_movies_data[movie_id]['Title'], ', '.join(unwatched_movies_data[movie_id]['Directors']), ', '.join(unwatched_movies_data[movie_id]['Actors'])))
 
 def scrape_movie(movie_id):
     response = requests.get('http://www.omdbapi.com/?i={}&plot=short&r=json'.format(movie_id))
