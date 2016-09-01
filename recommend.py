@@ -2,13 +2,20 @@ import requests
 import sys
 
 
-watched_movies_data = []
+collected_movie_ids = []
+watched_movie_ids = []
+unwatched_movie_ids = []
+
+watched_movies_data = {}
+unwatched_movies_data = {}
 actors = {}
 directors = {}
+sorted_actors_by_movie_number = []
+sorted_directors_by_movie_number = []
 
 
 def sort_by_length_of_movie_list(data_dict):
-    return sorted(data_dict.items(), key=lambda x: len(x[1]))
+    return [el for el in reversed(sorted(data_dict.items(), key=lambda x: len(x[1])))]
 
 
 def sort_and_print_actors():
@@ -17,8 +24,10 @@ def sort_and_print_actors():
     # Printing Top 10 favourite ACTORS name with movie name
     print('Top 10 Favourite ACTORS:')
     print('------------------------')
-    for ind, actor in enumerate(sorted_actors_by_movie_number[-1:-11:-1]):
+    for ind, actor in enumerate(sorted_actors_by_movie_number[0:10]):
         print('{}) {}\nMovies: {}\n'.format(ind+1, actor[0], ', '.join(actor[1])))
+
+    return sorted_actors_by_movie_number
 
 
 def sort_and_print_directors():
@@ -27,14 +36,15 @@ def sort_and_print_directors():
     # Printing Top 10 favourite ACTORS name with movie name
     print('Top 10 Favourite DIRECTORS:')
     print('---------------------------')
-    for ind, director in enumerate(sorted_directors_by_movie_number[-1:-11:-1]):
+    for ind, director in enumerate(sorted_directors_by_movie_number[0:10]):
         print('{}) {}'.format(ind+1, director[0]))
+
+    return sorted_directors_by_movie_number
 
 
 def build_actors_list():
-    for movie_data in watched_movies_data:
-        movie_actors = [el.strip() for el in movie_data['Actors'].split(',')]
-        for movie_actor in movie_actors:
+    for movie_id, movie_data in watched_movies_data.items():
+        for movie_actor in movie_data['Actors']:
             if movie_actor in actors:
                 actors[movie_actor].append(movie_data['Title'])
             else:
@@ -42,9 +52,8 @@ def build_actors_list():
 
 
 def build_directors_list():
-    for movie_data in watched_movies_data:
-        movie_directors = [el.strip() for el in movie_data['Director'].split(',')]
-        for movie_director in movie_directors:
+    for movie_id, movie_data in watched_movies_data.items():
+        for movie_director in movie_data['Directors']:
             if movie_director not in ['N/A']:
                 if movie_director in directors:
                     directors[movie_director].append(movie_data['Title'])
@@ -52,22 +61,46 @@ def build_directors_list():
                     directors[movie_director] = [movie_data['Title']]
 
 
+def scrape_movie(movie_id):
+    response = requests.get('http://www.omdbapi.com/?i={}&plot=short&r=json'.format(movie_id))
+
+    # Printing progress bar
+    sys.stdout.flush()
+    sys.stdout.write('.')
+
+    movie_data = response.json()
+    movie_data['Actors'] = [el.strip() for el in movie_data['Actors'].split(',')]
+    movie_data['Directors'] = [el.strip() for el in movie_data['Director'].split(',')]
+    return movie_data
+
+
 def scrap_movie_data():
-    with open('watched.txt') as collected_movie_ids:
+    # Reading movie ids of watched movies
+    with open('watched.txt') as watched_movie_ids_file:
+        for movie_id in watched_movie_ids_file.readlines():
+            watched_movie_ids.append(movie_id.strip())
 
-        # scraping all the movie data from collected movies with OMDB API
-        movie_count = 0
-        for movie_id in collected_movie_ids.readlines():
-            movie_id = movie_id.strip()
+    # Reading movie ids of collected movies
+    with open('movies.txt') as collected_movie_ids_file:
+        for movie_id in collected_movie_ids_file.readlines():
+            collected_movie_ids.append(movie_id.strip())
 
-            response = requests.get('http://www.omdbapi.com/?i={}&plot=short&r=json'.format(movie_id))
-            watched_movies_data.append(response.json())
+    unwatched_movie_ids = list(set(collected_movie_ids) - set(watched_movie_ids))
 
-            # Printing progress bar
-            sys.stdout.flush()
-            sys.stdout.write('.')
-            movie_count += 1
-        print('{} movie-data were scraped'.format(movie_count))
+    # scraping all the movie data from watched movies with OMDB API
+    print('Scraping watched movie data:')
+    for movie_id in watched_movie_ids:
+        movie_data = scrape_movie(movie_id)
+        watched_movies_data[movie_id] = movie_data
+    print('')
+
+    # scraping all the movie data from unwatched movies with OMDB API
+    print('Scraping unwatched movie data:')
+    for movie_id in unwatched_movie_ids:
+        movie_data = scrape_movie(movie_id)
+        unwatched_movies_data[movie_id] = movie_data
+    print('')
+
 
 
 if __name__ == '__main__':
@@ -80,6 +113,6 @@ if __name__ == '__main__':
 
     # Display all stuffs
     print('\n')
-    sort_and_print_actors()
-    sort_and_print_directors()
+    sorted_actors_by_movie_number = sort_and_print_actors()
+    sorted_directors_by_movie_number = sort_and_print_directors()
     print('')
